@@ -30,7 +30,15 @@ Our model: https://huggingface.co/Jianyuan1/deepseek-r1-14b-cot-math-reasoning-f
 
 If you find our work useful, please consider citing:
 ```
-
+@misc{zhong2025dyvethinkingfastslow,
+      title={Dyve: Thinking Fast and Slow for Dynamic Process Verification}, 
+      author={Jianyuan Zhong and Zeju Li and Zhijian Xu and Xiangyu Wen and Qiang Xu},
+      year={2025},
+      eprint={2502.11157},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2502.11157}, 
+}
 ```
 
 
