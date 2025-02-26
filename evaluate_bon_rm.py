@@ -8,12 +8,58 @@ from openai import AsyncOpenAI
 from math_verify import parse
 from evaluate import load
 import numpy as np
-from collections import Counter
-from evaluate_prm import evaluate_with_aggregation
+# from collections import Counter
+# from evaluate_prm import evaluate_with_aggregation
 
 math = load("competition_math")
 
+def judge_ans(
+        problem_str: str,
+        extracted_groundtruth: str,
+        output_list: List[str],
+        v_list: List[float],
+        aggration_mode: str,
+        extract_answer_fn,
+        judge_correct_fn,
+        normalize=False,
+    ):
+        ans_list = [extract_answer_fn(txt)[-1] for txt in output_list]
+        valid_ans_list, valid_v_list = [], []
+        for i, ans in enumerate(ans_list):
+            if ans != INVALID_ANS:
+                valid_ans_list.append(ans)
+                valid_v_list.append(v_list[i])
+        if len(valid_ans_list) == 0:
+            return 0
 
+        if "orm" in aggration_mode and normalize:
+            # score_normalization: this is only necessary for [-1, 1] values
+            valid_v_list = np.array(valid_v_list)
+            valid_v_list -= valid_v_list.min()
+            valid_v_list /= valid_v_list.max() + 1e-3
+            valid_v_list = valid_v_list.tolist()
+        aggregated_ans = AGG_FN_MAP[aggration_mode](valid_ans_list, valid_v_list)
+        print("aggregated_ans: ", aggregated_ans)
+        print("extracted_groundtruth: ", extracted_groundtruth)
+        return (
+            1 if math.compute(references=[extracted_groundtruth], predictions=[aggregated_ans])["accuracy"] > 0.99 else 0
+        )
+
+def evaluate_with_aggregation(problem_str, extracted_groundtruth, output_list, v_list, extract_answer_fn, judge_correct_fn):
+    results = {}
+    for aggration_mode, agg_fn in AGG_FN_MAP.items():
+        result = judge_ans(
+            problem_str=problem_str,
+            extracted_groundtruth=extracted_groundtruth,
+            output_list=output_list,
+            v_list=v_list,
+            aggration_mode=aggration_mode,
+            extract_answer_fn=extract_answer_fn,
+            judge_correct_fn=judge_correct_fn
+        )
+        results[aggration_mode] = result
+    return results
+    
 def separate_steps(text: str) -> list:
     """Separate the text into reasoning steps."""
     return text.split("\n\n")
